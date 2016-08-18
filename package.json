@@ -1,0 +1,14 @@
+{
+  "name": "profile-js",
+  "version": "0.0.1",
+  "description": "Rebase Javascript Parser",
+  "repository": "https://github.com/rebase-inc/profile-js",
+  "dependencies": {
+  },
+  "devDependencies": {
+  },
+  "main": "server.js",
+  "scripts": {
+    "app": "node server.js"
+  }
+}
