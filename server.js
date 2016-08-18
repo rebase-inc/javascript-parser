@@ -1,4 +1,5 @@
 const net = require('net');
+const esprima = require('esprima');
 
 process.on('SIGTERM', () => {
     console.log('Received signal SIGTERM');
@@ -43,7 +44,13 @@ function scan_patch(filename, code, previous_code, date) {
     return {};
 };
 
-var methods = [ scan_contents, scan_patch ];
+function language() {
+    return Object.keys(esprima.Syntax).map((node) => {
+        return 'Javascript.__language__.'+node;
+    });
+};
+
+var methods = [ scan_contents, scan_patch, language ];
 
 server.on('method_call', (connection, call) => {
     // 'call' is an array whose first element is the method index in 'methods'
@@ -58,9 +65,7 @@ server.on('method_call', (connection, call) => {
     let args = call.slice(1);
     result =  method.apply(this, args);
     result_as_json = JSON.stringify(result);
-    console.log('about to write: %s', result_as_json);
     flushed = connection.write(result_as_json+'\n', done_writing);
-    console.log('Flushed: %s', flushed);
 });
 
 server.on('error', (err) => {

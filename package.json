@@ -2,13 +2,30 @@
   "name": "profile-js",
   "version": "0.0.1",
   "description": "Rebase Javascript Parser",
-  "repository": "https://github.com/rebase-inc/profile-js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rebase-inc/profile-js.git"
+  },
   "dependencies": {
+    "esprima": "^2.7.2"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "main": "server.js",
   "scripts": {
-    "app": "node server.js"
-  }
+    "app": "node server.js",
+    "start": "node server.js"
+  },
+  "bugs": {
+    "url": "https://github.com/rebase-inc/profile-js/issues"
+  },
+  "homepage": "https://github.com/rebase-inc/profile-js#readme",
+  "keywords": [
+    "abstract",
+    "syntax",
+    "tree",
+    "parser",
+    "javascript"
+  ],
+  "author": "raphael@joinrebase.com",
+  "license": "SEE LICENSE IN LICENSE.md"
 }
