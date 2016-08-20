@@ -7,6 +7,7 @@
     "url": "git+https://github.com/rebase-inc/profile-js.git"
   },
   "dependencies": {
+    "ast-types": "^0.9.0",
     "esprima": "^2.7.2"
   },
   "devDependencies": {},
