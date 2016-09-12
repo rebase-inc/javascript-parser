@@ -58,7 +58,7 @@ function scan_contents(filename, code, date) {
     return language_profile(code, '', date);
 }
 
-function scan_patch(filename, code, previous_code, date) {
+function scan_patch(filename, code, previous_code, patch, date) {
     return language_profile(code, previous_code, date);
 }
 
