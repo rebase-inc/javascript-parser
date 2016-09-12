@@ -31,6 +31,9 @@ const server = net.createServer((c) => {
     });
 });
 
+function on_flush () {
+    console.log('Data was flushed');
+}
 
 server.on('method_call', (connection, call) => {
     // 'call' is an array whose first element is the method index in 'methods'
@@ -41,7 +44,8 @@ server.on('method_call', (connection, call) => {
         return;
     }
     result_as_json = JSON.stringify(protocol.run(call));
-    flushed = connection.write(result_as_json+'\n');
+    flushed = connection.write(result_as_json+'\n', on_flush);
+    console.log('Flushed: %s', flushed);
 });
 
 server.on('error', (err) => {
