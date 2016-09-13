@@ -14,6 +14,7 @@ json_fragment = '';
 
 const server = net.createServer((c) => {
     connected();
+    console.log('New connection with: address:%s, port: %s', c.remoteAddress, c.remotePort);
     c.on('end', disconnected);
     c.on('data', (data) => { 
         json_chunks = data.toString().split('\n')
@@ -31,8 +32,8 @@ const server = net.createServer((c) => {
     });
 });
 
-function on_flush () {
-    console.log('Data was flushed');
+function on_flush (connection) {
+    console.log('Data was flushed for (%s, %s)', connection.remoteAddress, connection.remotePort);
 }
 
 server.on('method_call', (connection, call) => {
@@ -43,8 +44,11 @@ server.on('method_call', (connection, call) => {
         console.log('Could not process this call, connection is destroyed');
         return;
     }
+    console.log('Method call from: address:%s, port: %s', connection.remoteAddress, connection.remotePort);
     result_as_json = JSON.stringify(protocol.run(call));
-    flushed = connection.write(result_as_json+'\n', on_flush);
+    console.log('Result:');
+    console.log(result_as_json);
+    flushed = connection.write(result_as_json+'\n', on_flush.bind(this, connection));
     console.log('Flushed: %s', flushed);
 });
 
