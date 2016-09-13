@@ -12,8 +12,13 @@ done_writing = console.log.bind(this, 'done writing');
 
 json_fragment = '';
 
+function timestamp() {
+    console.log(new Date().toISOString());
+}
+
 const server = net.createServer((c) => {
     connected();
+    timestamp();
     console.log('New connection with: address:%s, port: %s', c.remoteAddress, c.remotePort);
     c.on('end', disconnected);
     c.on('data', (data) => { 
@@ -33,6 +38,7 @@ const server = net.createServer((c) => {
 });
 
 function on_flush (connection) {
+    timestamp();
     console.log('Data was flushed for (%s, %s)', connection.remoteAddress, connection.remotePort);
 }
 
@@ -44,11 +50,14 @@ server.on('method_call', (connection, call) => {
         console.log('Could not process this call, connection is destroyed');
         return;
     }
+    timestamp();
     console.log('Method call from: address:%s, port: %s', connection.remoteAddress, connection.remotePort);
     result_as_json = JSON.stringify(protocol.run(call));
+    timestamp();
     console.log('Result:');
     console.log(result_as_json);
     flushed = connection.write(result_as_json+'\n', on_flush.bind(this, connection));
+    timestamp();
     console.log('Flushed: %s', flushed);
 });
 
