@@ -1,10 +1,17 @@
-const esprima = require('esprima');
-const types = require('ast-types');
+const babel = require('babel-core');
+const traverse = require('babel-traverse');
+const types = require('babel-types');
 
 const TechProfile = require('./tech_profile.js').TechProfile;
 
 const LANGUAGE_PREFIX = 'Javascript.';
 const LANGUAGE_TECH = LANGUAGE_PREFIX+'__language__.';
+const BABEL_OPTIONS = { presets: ['latest', 'stage-0', 'react'] };
+
+
+function parse(code) {
+    return babel.transform(code, BABEL_OPTIONS).ast;
+}
 
 
 function grammar_use(code, date) {
@@ -17,14 +24,17 @@ function grammar_use(code, date) {
 
        Raises SyntaxError if parsing fails.
        */
-    let tree = esprima.parse(code);
     let grammar_profile = new TechProfile();
-    types.visit(tree, {
-        visitNode: function(node) {
-            grammar_profile.add(LANGUAGE_TECH+node.value.type, date, 1);
-            this.traverse(node);
+    try {
+    let ast = parse(code);
+    traverse.default(ast, {
+        enter(path) {
+            grammar_profile.add(LANGUAGE_TECH+path.node.type, date, 1);
         }
     });
+    } catch (e) {
+        console.log(e);
+    }
     return grammar_profile
 }
 
@@ -62,13 +72,13 @@ function scan_patch(filename, code, previous_code, patch, date) {
     return language_profile(code, previous_code, date);
 }
 
-var _language = Object.keys(esprima.Syntax).map((node) => { return LANGUAGE_TECH+node; });
+const _language = types.TYPES.map( node => LANGUAGE_TECH+node );
 
 function language() {
     return _language;
 }
 
-var methods = [ scan_contents, scan_patch, language ];
+const methods = [ scan_contents, scan_patch, language ];
 
 
 function run(call) {

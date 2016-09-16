@@ -6,7 +6,6 @@ process.on('SIGTERM', process.exit.bind(this, 0))
 process.on('SIGINT', process.exit.bind(this, 0))
 
 
-connected = console.log.bind(this, 'client connected');
 disconnected = console.log.bind(this, 'client disconnected');
 done_writing = console.log.bind(this, 'done writing');
 
@@ -17,19 +16,26 @@ function timestamp() {
 }
 
 const server = net.createServer((c) => {
-    connected();
-    timestamp();
-    console.log('New connection with: address:%s, port: %s', c.remoteAddress, c.remotePort);
+    console.log('%s\tNew connection with: address:%s, port: %s',
+                new Date().toISOString(),
+                c.remoteAddress,
+                c.remotePort
+               );
     c.on('end', disconnected);
     c.on('data', (data) => { 
-        json_chunks = data.toString().split('\n')
+        console.log('Received:');
+        console.log(data.toString());
+        json_chunks = data.toString().split('\n');
         json_chunks[0] = json_fragment+json_chunks[0];
+        json_fragment = '';
         json_chunks.forEach( (chunk) => {
             if (chunk) {
                 try {
-                 var call = JSON.parse(chunk);
-                 server.emit('method_call', c, call);
+                    var call = JSON.parse(chunk);
+                    server.emit('method_call', c, call);
                 } catch(error) {
+                    console.log('Found error while parsing JSON chunk:\n%s\nError: %o', chunk, error);
+
                     json_fragment = chunk;
                 }
             }
