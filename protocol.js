@@ -1,4 +1,4 @@
-const babel = require('babel-core');
+const babylon = require('babylon');
 const traverse = require('babel-traverse');
 const types = require('babel-types');
 
@@ -6,11 +6,25 @@ const TechProfile = require('./tech_profile.js').TechProfile;
 
 const LANGUAGE_PREFIX = 'Javascript.';
 const LANGUAGE_TECH = LANGUAGE_PREFIX+'__language__.';
-const BABEL_OPTIONS = { presets: ['latest', 'stage-0', 'react'] };
+const BABYLON_OPTIONS = { 
+    sourceType: "module",
+    plugins: [
+        "jsx",
+        "flow",
+        "doExpressions",
+        "objectRestSpread",
+        "decorators",
+        "classProperties",
+        "exportExtensions",
+        "asyncGenerators",
+        "functionBind",
+        "functionSent"
+    ]
+};
 
 
 function parse(code) {
-    return babel.transform(code, BABEL_OPTIONS).ast;
+    return babylon.parse(code, BABYLON_OPTIONS);
 }
 
 
@@ -26,12 +40,14 @@ function grammar_use(code, date) {
        */
     let grammar_profile = new TechProfile();
     try {
-    let ast = parse(code);
-    traverse.default(ast, {
-        enter(path) {
-            grammar_profile.add(LANGUAGE_TECH+path.node.type, date, 1);
-        }
-    });
+        traverse.default(parse(code), {
+            enter(path) {
+                grammar_profile.add(LANGUAGE_TECH+path.node.type, date, 1);
+                if (path.node.type == 'ImportDeclaration') {
+                    console.log('ImportDeclaration Source: ', path.node.source);
+                }
+            }
+        });
     } catch (e) {
         console.log(e);
     }
