@@ -75,7 +75,7 @@ function grammar_use(code, date) {
                 } else if (node.type == 'Identifier') {
                     console.log('Identifier: %s', node. name);
                     if (bindings.has(node.name)) {
-                        grammar_profile.add(THIRD_PARTY+bindings.get(node.name), date, 1);
+                        grammar_profile.add(bindings.get(node.name), date, 1);
                     }
                 }
             }
