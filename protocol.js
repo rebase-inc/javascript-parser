@@ -5,7 +5,9 @@ const types = require('babel-types');
 const TechProfile = require('./tech_profile.js').TechProfile;
 
 const LANGUAGE_PREFIX = 'Javascript.';
+const THIRD_PARTY = LANGUAGE_PREFIX+'__third_party__.';
 const LANGUAGE_TECH = LANGUAGE_PREFIX+'__language__.';
+
 const BABYLON_OPTIONS = { 
     sourceType: "module",
     plugins: [
@@ -40,11 +42,41 @@ function grammar_use(code, date) {
        */
     let grammar_profile = new TechProfile();
     try {
+        let bindings = new Map();
         traverse.default(parse(code), {
             enter(path) {
-                grammar_profile.add(LANGUAGE_TECH+path.node.type, date, 1);
-                if (path.node.type == 'ImportDeclaration') {
-                    console.log('ImportDeclaration Source: ', path.node.source);
+                let node = path.node;
+                grammar_profile.add(LANGUAGE_TECH+node.type, date, 1);
+                if (node.type == 'ImportDeclaration') {
+                    let importDeclaration = node;
+                    let source = node.source;
+                    console.log('ImportDeclaration Source: ', importDeclaration.source);
+                    if (source.value.startsWith('.') || source.value.startsWith('/')) {
+                        console.log('Local import, ignoring: import "%s"', source.value);
+                    } else {
+                        console.log('Third-party import: import "%s"', source.value);
+                        importDeclaration.specifiers.forEach( specifier => {
+                            console.log('Specifier: ', specifier.local.name);
+                            switch (specifier.type) {
+                                case "ImportSpecifier":
+                                    bindings.set(specifier.local.name, THIRD_PARTY+source.value+'.'+specifier.imported.name);
+                                break;
+
+                                case "ImportDefaultSpecifier":
+                                    bindings.set(specifier.local.name, THIRD_PARTY+source.value+'.'+specifier.local.name);
+                                break;
+
+                                case "ImportNamespaceSpecifier":
+                                    bindings.set(specifier.local.name, THIRD_PARTY+source.value+'.'+specifier.local.name);
+                                break;
+                            }
+                        });
+                    }
+                } else if (node.type == 'Identifier') {
+                    console.log('Identifier: %s', node. name);
+                    if (bindings.has(node.name)) {
+                        grammar_profile.add(THIRD_PARTY+bindings.get(node.name), date, 1);
+                    }
                 }
             }
         });
