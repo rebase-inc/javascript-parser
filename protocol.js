@@ -4,26 +4,13 @@ const types = require('babel-types');
 
 const TechProfile = require('./tech_profile.js').TechProfile;
 
-const LANGUAGE_PREFIX = 'Javascript.';
-const THIRD_PARTY = LANGUAGE_PREFIX+'__third_party__.';
-const LANGUAGE_TECH = LANGUAGE_PREFIX+'__language__.';
-
-const BABYLON_OPTIONS = { 
-    sourceType: "module",
-    plugins: [
-        "jsx",
-        "flow",
-        "doExpressions",
-        "objectRestSpread",
-        "decorators",
-        "classProperties",
-        "exportExtensions",
-        "asyncGenerators",
-        "functionBind",
-        "functionSent"
-    ]
-};
-
+const {
+    LANGUAGE_PREFIX,
+    THIRD_PARTY,
+    LANGUAGE_TECH,
+    BABYLON_OPTIONS,
+    STANDARD_LIBRARY
+} = require('./constants.js');
 
 function parse(code) {
     return babylon.parse(code, BABYLON_OPTIONS);
@@ -42,7 +29,7 @@ function grammar_use(code, date) {
        */
     let grammar_profile = new TechProfile();
     try {
-        let bindings = new Map();
+        let bindings = new Map(STANDARD_LIBRARY);
         traverse.default(parse(code), {
             enter(path) {
                 let node = path.node;
@@ -50,13 +37,11 @@ function grammar_use(code, date) {
                 if (node.type == 'ImportDeclaration') {
                     let importDeclaration = node;
                     let source = node.source;
-                    console.log('ImportDeclaration Source: ', importDeclaration.source);
                     if (source.value.startsWith('.') || source.value.startsWith('/')) {
                         console.log('Local import, ignoring: import "%s"', source.value);
                     } else {
                         console.log('Third-party import: import "%s"', source.value);
                         importDeclaration.specifiers.forEach( specifier => {
-                            console.log('Specifier: ', specifier.local.name);
                             switch (specifier.type) {
                                 case "ImportSpecifier":
                                     bindings.set(specifier.local.name, THIRD_PARTY+source.value+'.'+specifier.imported.name);
@@ -73,7 +58,6 @@ function grammar_use(code, date) {
                         });
                     }
                 } else if (node.type == 'Identifier') {
-                    console.log('Identifier: %s', node. name);
                     if (bindings.has(node.name)) {
                         grammar_profile.add(bindings.get(node.name), date, 1);
                     }
