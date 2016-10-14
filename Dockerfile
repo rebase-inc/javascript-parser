@@ -9,8 +9,6 @@ WORKDIR /code
 
 RUN npm install
 
-WORKDIR /code
-
 COPY constants.js /code/constants.js
 
 COPY server.js /code/server.js
