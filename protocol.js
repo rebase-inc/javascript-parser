@@ -40,7 +40,6 @@ function grammar_use(code, date) {
                     if (source.value.startsWith('.') || source.value.startsWith('/')) {
                         console.log('Local import, ignoring: import "%s"', source.value);
                     } else {
-                        console.log('Third-party import: import "%s"', source.value);
                         importDeclaration.specifiers.forEach( specifier => {
                             switch (specifier.type) {
                                 case "ImportSpecifier":

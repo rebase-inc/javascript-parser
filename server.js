@@ -23,8 +23,6 @@ const server = net.createServer((c) => {
                );
     c.on('end', disconnected);
     c.on('data', (data) => { 
-        console.log('Received:');
-        console.log(data.toString());
         json_chunks = data.toString().split('\n');
         json_chunks[0] = json_fragment+json_chunks[0];
         json_fragment = '';
@@ -34,7 +32,7 @@ const server = net.createServer((c) => {
                     var call = JSON.parse(chunk);
                     server.emit('method_call', c, call);
                 } catch(error) {
-                    console.log('Found error while parsing JSON chunk:\n%s\nError: %o', chunk, error);
+                    console.log('Found error while parsing JSON chunk:\nError: %o', error);
 
                     json_fragment = chunk;
                 }
@@ -44,8 +42,8 @@ const server = net.createServer((c) => {
 });
 
 function on_flush (connection) {
-    timestamp();
-    console.log('Data was flushed for (%s, %s)', connection.remoteAddress, connection.remotePort);
+    //timestamp();
+    //console.log('Data was flushed for (%s, %s)', connection.remoteAddress, connection.remotePort);
 }
 
 server.on('method_call', (connection, call) => {
@@ -57,14 +55,12 @@ server.on('method_call', (connection, call) => {
         return;
     }
     timestamp();
-    console.log('Method call from: address:%s, port: %s', connection.remoteAddress, connection.remotePort);
+    //console.log('Method call from: address:%s, port: %s', connection.remoteAddress, connection.remotePort);
     result_as_json = JSON.stringify(protocol.run(call));
     timestamp();
-    console.log('Result:');
-    console.log(result_as_json);
     flushed = connection.write(result_as_json+'\n', on_flush.bind(this, connection));
     timestamp();
-    console.log('Flushed: %s', flushed);
+    //console.log('Flushed: %s', flushed);
 });
 
 server.on('error', (err) => {
