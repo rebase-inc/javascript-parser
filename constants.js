@@ -2,14 +2,14 @@ const LANGUAGE_PREFIX = 'Javascript.';
 exports.LANGUAGE_PREFIX = LANGUAGE_PREFIX;
 
 
-const STD = LANGUAGE_PREFIX+'__standard_library__.';
+const STD = LANGUAGE_PREFIX+'__std_library__.';
 exports.STD = STD;
 
 
-exports.THIRD_PARTY = LANGUAGE_PREFIX+'__third_party__.';
+exports.THIRD_PARTY = LANGUAGE_PREFIX+'__3rd_party__.';
 
 
-exports.LANGUAGE_TECH = LANGUAGE_PREFIX+'__language__.';
+exports.LANGUAGE_TECH = LANGUAGE_PREFIX+'__grammar__.';
 
 
 exports.BABYLON_OPTIONS = { 
