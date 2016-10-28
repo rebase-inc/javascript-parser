@@ -12,15 +12,16 @@ done_writing = console.log.bind(this, 'done writing');
 json_fragment = '';
 
 function timestamp() {
+    // TODO use rsyslog instead
     console.log(new Date().toISOString());
 }
 
 const server = net.createServer((c) => {
-    console.log('%s\tNew connection with: address:%s, port: %s',
-                new Date().toISOString(),
-                c.remoteAddress,
-                c.remotePort
-               );
+    //console.log('%s\tNew connection with: address:%s, port: %s',
+                //new Date().toISOString(),
+                //c.remoteAddress,
+                //c.remotePort
+               //);
     c.on('end', disconnected);
     c.on('data', (data) => { 
         json_chunks = data.toString().split('\n');
@@ -32,8 +33,8 @@ const server = net.createServer((c) => {
                     var call = JSON.parse(chunk);
                     server.emit('method_call', c, call);
                 } catch(error) {
-                    console.log('Found error while parsing JSON chunk:\nError: %o', error);
-
+                    // TODO use rsyslog instead to avoid unbounded disk use (stdout is saved to disk by Docker)
+                    //console.log('Found error while parsing JSON chunk:\nError: %o', error);
                     json_fragment = chunk;
                 }
             }
@@ -54,12 +55,12 @@ server.on('method_call', (connection, call) => {
         console.log('Could not process this call, connection is destroyed');
         return;
     }
-    timestamp();
+    //timestamp();
     //console.log('Method call from: address:%s, port: %s', connection.remoteAddress, connection.remotePort);
     result_as_json = JSON.stringify(protocol.run(call));
-    timestamp();
+    //timestamp();
     flushed = connection.write(result_as_json+'\n', on_flush.bind(this, connection));
-    timestamp();
+    //timestamp();
     //console.log('Flushed: %s', flushed);
 });
 

@@ -5,121 +5,144 @@ const types = require('babel-types');
 const TechProfile = require('./tech_profile.js').TechProfile;
 
 const {
-    LANGUAGE_PREFIX,
-    THIRD_PARTY,
-    LANGUAGE_TECH,
+    JS_LANGUAGE,
     BABYLON_OPTIONS,
     STANDARD_LIBRARY
 } = require('./constants.js');
+
 
 function parse(code) {
     return babylon.parse(code, BABYLON_OPTIONS);
 }
 
+function Profile() {
+    var profile = new Object();
+    profile.addGrammar = add.bind(profile, '0.');
+    profile.addStdLib = add.bind(profile, '1.');
+    profile.add3rdParty = add.bind(profile, '2.');
+    return profile;
+}
 
-function grammar_use(code, date) {
+
+function add(level, tech, count) {
+    let key = level+tech;
+    if (this.hasOwnProperty(key)) {
+        this[key] = count + this[key];
+    } else {
+        this[key] = count;
+    }
+}
+
+
+function scan_contents(language_index, filename, code, context) {
     /*
-       Returns a TechProfile of abstract grammar elements in 'code'
+       Returns a Map of technology elements to their use count in 'code'
        by walking through the abstract syntax tree of the code.
 
        See https://docs.python.org/3.5/library/ast.html#abstract-grammar
        for details.
 
        Raises SyntaxError if parsing fails.
+
+        Note:
+        'language_index' is unused because we only support javascript in this implementation but that could change in the future.
+        'filename' is unused.
+        'context' is unused.
+
        */
-    let grammar_profile = new TechProfile();
+    let profile = Profile();
     try {
-        let bindings = new Map(STANDARD_LIBRARY);
+        let bindings = new Map(STANDARD_LIBRARY.map( lib => [ lib, profile.addStdLib.bind(null, lib, 1) ] ));
         traverse.default(parse(code), {
             enter(path) {
                 let node = path.node;
-                grammar_profile.add(LANGUAGE_TECH+node.type, date, 1);
+                profile.addGrammar(node.type, 1);
                 if (node.type == 'ImportDeclaration') {
                     let importDeclaration = node;
                     let source = node.source;
                     if (source.value.startsWith('.') || source.value.startsWith('/')) {
-                        console.log('Local import, ignoring: import "%s"', source.value);
+                        //console.log('Local import, ignoring: import "%s"', source.value);
+                        // TODO use rsyslog instead...
                     } else {
                         importDeclaration.specifiers.forEach( specifier => {
                             switch (specifier.type) {
-                                case "ImportSpecifier":
-                                    bindings.set(specifier.local.name, THIRD_PARTY+source.value+'.'+specifier.imported.name);
-                                break;
+                                case "ImportSpecifier": {
+                                    bindings.set(
+                                        specifier.local.name,
+                                        profile.add3rdParty.bind(
+                                            null,
+                                            source.value+'.'+specifier.imported.name,
+                                            1
+                                        )
+                                    );
+                                } break;
 
-                                case "ImportDefaultSpecifier":
-                                    bindings.set(specifier.local.name, THIRD_PARTY+source.value+'.'+specifier.local.name);
-                                break;
+                                case "ImportDefaultSpecifier": {
+                                    bindings.set(
+                                        specifier.local.name,
+                                        profile.add3rdParty.bind(
+                                            null,
+                                            source.value+'.'+specifier.local.name,
+                                            1
+                                        )
+                                    );
+                                } break;
 
-                                case "ImportNamespaceSpecifier":
-                                    bindings.set(specifier.local.name, THIRD_PARTY+source.value+'.'+specifier.local.name);
-                                break;
+                                case "ImportNamespaceSpecifier": {
+                                    bindings.set(
+                                        specifier.local.name,
+                                        profile.add3rdParty.bind(
+                                            null,
+                                            source.value+'.'+specifier.local.name,
+                                            1
+                                        )
+                                    );
+                                } break;
                             }
                         });
                     }
                 } else if (node.type == 'Identifier') {
                     if (bindings.has(node.name)) {
-                        grammar_profile.add(bindings.get(node.name), date, 1);
+                        bindings.get(node.name)();
                     }
                 }
             }
         });
     } catch (e) {
+        console.log('Caught exception while parsing ', filename, ' with commit: ', context);
         console.log(e);
     }
-    return grammar_profile
+
+    return profile;
 }
 
-function* concat(...iterators) {
-    for ( var i=0; i<iterators.length; i++) {
-        yield* iterators[i];
+function* toGrammarIndexes(keys) {
+    let rules = types.TYPES;
+    for (let grammarRule of keys) {
+        yield rules.indexOf(grammarRule);
     }
 }
 
-function language_profile(new_code, old_code, date) {
-    let new_grammar_use = grammar_use(new_code, date);
-    if (!old_code) {
-        return new_grammar_use;
-    }
-    let old_grammar_use = grammar_use(old_code, date);
-    let abs_diff = new TechProfile();
-    let all_keys = new Set(concat(Object.keys(new_grammar_use), Object.keys(old_grammar_use)));
-    all_keys.forEach( (technology) => {
-        // not the best option, but until we can diff 2 abstract syntax trees,
-        // we can only look at the aggregate change
-        let use_count = Math.abs(new_grammar_use.get(technology).total_reps - old_grammar_use.get(technology).total_reps);
-        if (use_count > 0) {
-            abs_diff.add(technology, date, use_count);
-        }
-    });
-    return abs_diff;
+function languages() {
+    return [ JS_LANGUAGE ];
 }
 
 
-function scan_contents(filename, code, date) {
-    return language_profile(code, '', date);
+function grammar() {
+    return types.TYPES;
 }
 
-function scan_patch(filename, code, previous_code, patch, date) {
-    return language_profile(code, previous_code, date);
-}
 
-const _language = types.TYPES.map( node => LANGUAGE_TECH+node );
-
-function language() {
-    return _language;
-}
-
-const methods = [ scan_contents, scan_patch, language ];
+const methods = [ languages, grammar, scan_contents ];
 
 
 function run(call) {
-    let method = methods[call[0]];
+    let index = call[0];
+    if (index >= methods.length) { return "invalid method index"; }
+    let method = methods[index];
     let args = call.slice(1);
-    result =  method.apply(this, args);
-    return result;
+    return method.apply(this, args);
 }
 
 
 exports.run = run;
-exports.grammar_use = grammar_use;
-exports.language_profile = language_profile;

@@ -1,15 +1,5 @@
-const LANGUAGE_PREFIX = 'Javascript.';
-exports.LANGUAGE_PREFIX = LANGUAGE_PREFIX;
 
-
-const STD = LANGUAGE_PREFIX+'__std_library__.';
-exports.STD = STD;
-
-
-exports.THIRD_PARTY = LANGUAGE_PREFIX+'__3rd_party__.';
-
-
-exports.LANGUAGE_TECH = LANGUAGE_PREFIX+'__grammar__.';
+exports.JS_LANGUAGE = 'Javascript';
 
 
 exports.BABYLON_OPTIONS = { 
@@ -29,7 +19,7 @@ exports.BABYLON_OPTIONS = {
 };
 
 
-exports.STANDARD_LIBRARY = new Map([
+exports.STANDARD_LIBRARY = [
     'Infinity',
     'NaN',    
     'undefined',
@@ -91,8 +81,8 @@ exports.STANDARD_LIBRARY = new Map([
     'SIMD.Bool32x4',
     'SIMD.Bool64x2',
     'ArrayBuffer',
-    'SharedArrayBuffer ',
-    'Atomics ',
+    'SharedArrayBuffer',
+    'Atomics',
     'DataView',
     'JSON',
     'Promise',
@@ -105,6 +95,6 @@ exports.STANDARD_LIBRARY = new Map([
     'Intl.DateTimeFormat',
     'Intl.NumberFormat',
     'arguments'
-].map(obj => [obj, STD+obj]));
+];
 
 
