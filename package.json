@@ -7,17 +7,17 @@
     "url": "git+https://github.com/rebase-inc/profile-js.git"
   },
   "dependencies": {
-    "babel-core": "^6.14.0",
+    "babel-core": "^6.20.0",
     "babel-preset-latest": "^6.14.0",
     "babel-preset-react": "^6.11.1",
     "babel-preset-stage-0": "^6.5.0",
     "babel-traverse": "^6.15.0",
-    "babel-types": "^6.15.0"
+    "babel-types": "^6.15.0",
+    "readline": "^1.3.0"
   },
   "devDependencies": {},
   "main": "server.js",
   "scripts": {
-    "app": "node server.js",
     "start": "node server.js"
   },
   "bugs": {

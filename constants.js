@@ -2,23 +2,6 @@
 exports.JS_LANGUAGE = 'Javascript';
 
 
-exports.BABYLON_OPTIONS = { 
-    sourceType: "module",
-    plugins: [
-        "jsx",
-        "flow",
-        "doExpressions",
-        "objectRestSpread",
-        "decorators",
-        "classProperties",
-        "exportExtensions",
-        "asyncGenerators",
-        "functionBind",
-        "functionSent"
-    ]
-};
-
-
 exports.STANDARD_LIBRARY = [
     'Infinity',
     'NaN',    
