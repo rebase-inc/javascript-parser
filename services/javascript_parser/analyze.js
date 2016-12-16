@@ -36,9 +36,10 @@ function analyzeCode(code) {
         }
       }
     }, path.scope);
-    return profile.useCount;
+    return profile.asJson();
   } catch (e) {
-    return profile.useCount;
+    console.log(e);
+    return profile.asJson();
   }
 }
 
@@ -65,6 +66,11 @@ class Profile {
       this.addModuleByName(this.bindings.get(boundName));
     }
   }
+  asJson() {
+    let obj = Object.create(null);
+    for (let [k,v] of this.useCount) { obj[k] = v; }
+    return JSON.stringify(obj);          
+  }
 }
 
 function _isRequireImportNode(node) {
@@ -74,7 +80,6 @@ function _isRequireImportNode(node) {
 }
 
 function _parseVariableDeclarator(node, profile) {
-  //VariableDeclarator -> MemberExpression -> CallExpression
   let boundName = node.id.name;
   let field = '';
   node = node.init;

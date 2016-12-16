@@ -13,9 +13,7 @@ COPY constants.js /code/constants.js
 
 COPY server.js /code/server.js
 
-COPY protocol.js /code/protocol.js
-
-COPY tech_profile.js /code/tech_profile.js
+COPY analyze.js /code/analyze.js
 
 EXPOSE 7777
 
