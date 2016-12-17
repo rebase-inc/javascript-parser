@@ -1,9 +1,0 @@
-version: '2'
-
-services:
-  javascript_parser:
-    extends:
-      file: common.yml
-      service: javascript_parser
-    ports:
-      - "7777:7777"
