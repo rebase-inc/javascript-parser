@@ -1,19 +1,13 @@
-FROM alpine:3.4
+FROM node:alpine
 
-RUN apk add --update nodejs && \
-    rm -rf /var/cache/apk/*
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
 
-COPY package.json /code/package.json
+ARG NODE_ENV
+ENV NODE_ENV $NODE_ENV
 
-WORKDIR /code
-
-RUN npm install
-
-COPY constants.js /code/constants.js
-
-COPY server.js /code/server.js
-
-COPY analyze.js /code/analyze.js
+COPY . /usr/src/app
+RUN npm install --quiet --depth -1 # try to make npm not spam logs
 
 EXPOSE 7777
 
