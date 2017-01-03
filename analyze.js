@@ -1,6 +1,7 @@
 const traverse = require('babel-traverse').default;
 const NodePath = require('babel-traverse').NodePath;
 const Hub = require('babel-traverse').Hub
+const logger = require('winston');
 
 const babylon = require('babylon');
 
@@ -24,8 +25,12 @@ function analyzeCode(code) {
   try {
     var ast = babylon.parse(code, { sourceType: 'module', plugins: '*' });
     var path = NodePath.get({ hub: hub, parentPath: null, parent: ast, container: ast, key: 'program' }).setContext();
+    var nodeCount = 0;
     traverse(ast, {
       enter: (path) => {
+        nodeCount += 1;
+        if (nodeCount % 10000 == 0) { logger.debug('Parsed ' + nodeCount + ' nodes...'); }
+
         var node = path.node;
         if (node.type == 'ImportDeclaration') {
           _parseImportDeclaration(node, profile);
@@ -36,10 +41,11 @@ function analyzeCode(code) {
         }
       }
     }, path.scope);
-    return profile.asJson();
+    logger.debug('Analyzing code took ' + (process.hrtime(start)[1] / 1000000000).toFixed(2) + ' seconds');
+    return profile.asObject();
   } catch (e) {
-    console.log(e);
-    return profile.asJson();
+    logger.error('Error encountered while parsing code: ' + e.message);
+    return profile.asObject();
   }
 }
 
@@ -66,10 +72,12 @@ class Profile {
       this.addModuleByName(this.bindings.get(boundName));
     }
   }
-  asJson() {
+  asObject() {
     let obj = Object.create(null);
-    for (let [k,v] of this.useCount) { obj[k] = v; }
-    return JSON.stringify(obj);          
+    for (let [k,v] of this.useCount) {
+      obj[k] = v;
+    }
+    return obj;
   }
 }
 
@@ -83,6 +91,7 @@ function _parseVariableDeclarator(node, profile) {
   let boundName = node.id.name;
   let field = '';
   node = node.init;
+  if (!node) { return; }
   while (node.type == 'MemberExpression') {
     field = node.property.name + '.' + field;
     node = node.object;
