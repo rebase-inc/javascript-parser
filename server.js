@@ -27,7 +27,7 @@ const server = net.createServer((socket) => {
       }
       else {
         partialData = '';
-        logger.error('Got error parsing code: ' + err.message);
+        logger.error('Error parsing json : ' + err.message);
         return;
       }
     }
@@ -35,7 +35,7 @@ const server = net.createServer((socket) => {
     let code = new Buffer(b64code, 'base64').toString();
     let useCount = analyze(code);
     let duration = (process.hrtime(start)[1] / 1000000000).toFixed(2)
-    socket.write(JSON.stringify({ use_count: useCount, analysisTime: duration }), 'UTF8', () => logger.debug('Analysis data successfully sent to client'));
+    socket.write(JSON.stringify({ use_count: useCount, analysisTime: duration }), 'UTF8');
   });
   socket.on('close', (err) => {
     if (err) {

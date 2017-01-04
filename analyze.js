@@ -30,7 +30,6 @@ function analyzeCode(code) {
       enter: (path) => {
         nodeCount += 1;
         if (nodeCount % 10000 == 0) { logger.debug('Parsed ' + nodeCount + ' nodes...'); }
-
         var node = path.node;
         if (node.type == 'ImportDeclaration') {
           _parseImportDeclaration(node, profile);
@@ -41,7 +40,6 @@ function analyzeCode(code) {
         }
       }
     }, path.scope);
-    logger.debug('Analyzing code took ' + (process.hrtime(start)[1] / 1000000000).toFixed(2) + ' seconds');
     return profile.asObject();
   } catch (e) {
     logger.error('Error encountered while parsing code: ' + e.message);
