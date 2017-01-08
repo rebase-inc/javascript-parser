@@ -13,7 +13,6 @@ const PORT = process.env.PORT || 7777;
 const server = net.createServer((socket) => {
   let address = socket.address();
   address.address = address.address.replace(/^.*:/, ''); // IPv4/IPv6 Hybrid socket format fix
-  logger.debug('Got new connection from ' + address.address + ' via port ' + address.port);
   let partialData = '';
   socket.on('data', (data) => {
     partialData += data.toString();
@@ -22,7 +21,6 @@ const server = net.createServer((socket) => {
       partialData = ''; // so we can receive another blob on this same socket
     } catch (err) {
       if (err instanceof SyntaxError) {
-        logger.debug('Encountered incomplete JSON...waiting for more data from client');
         return;
       }
       else {
