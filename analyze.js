@@ -22,29 +22,24 @@ const hub = new Hub({
 
 function analyzeCode(code) {
   var profile = new Profile();
-  try {
-    var ast = babylon.parse(code, { sourceType: 'module', plugins: '*' });
-    var path = NodePath.get({ hub: hub, parentPath: null, parent: ast, container: ast, key: 'program' }).setContext();
-    var nodeCount = 0;
-    traverse(ast, {
-      enter: (path) => {
-        nodeCount += 1;
-        if (nodeCount % 10000 == 0) { logger.debug('Parsed ' + nodeCount + ' nodes...'); }
-        var node = path.node;
-        if (node.type == 'ImportDeclaration') {
-          _parseImportDeclaration(node, profile);
-        } else if (node.type == 'VariableDeclarator') {
-          _parseVariableDeclarator(node, profile);
-        } else if (node.type == 'Identifier') {
-          profile.addModuleByBoundName(node.name);
-        }
+  var ast = babylon.parse(code, { sourceType: 'module', plugins: '*' });
+  var path = NodePath.get({ hub: hub, parentPath: null, parent: ast, container: ast, key: 'program' }).setContext();
+  var nodeCount = 0;
+  traverse(ast, {
+    enter: (path) => {
+      nodeCount += 1;
+      if (nodeCount % 10000 == 0) { logger.debug('Parsed ' + nodeCount + ' nodes...'); }
+      var node = path.node;
+      if (node.type == 'ImportDeclaration') {
+        _parseImportDeclaration(node, profile);
+      } else if (node.type == 'VariableDeclarator') {
+        _parseVariableDeclarator(node, profile);
+      } else if (node.type == 'Identifier') {
+        profile.addModuleByBoundName(node.name);
       }
-    }, path.scope);
-    return profile.asObject();
-  } catch (e) {
-    logger.error('Error encountered while parsing code: ' + e.message);
-    return profile.asObject();
-  }
+    }
+  }, path.scope);
+  return profile.asObject();
 }
 
 class Profile {

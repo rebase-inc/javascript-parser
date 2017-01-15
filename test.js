@@ -28,6 +28,18 @@ describe('Test javascript parser', () => {
         done();
       });
     });
+    it('Should return an error if we send invalid code', (done) => {
+      let client = require('net').connect({ port: PORT, timeout: TIMEOUT });
+      let code = new Buffer('get foo = import require(\'net\';);');
+      client.on('data', (data) => {
+        let response = JSON.parse(new Buffer(data).toString());
+        response.should.have.property('error');
+        response.should.have.property('message');
+        client.end();
+        done();
+      });
+      client.write(JSON.stringify({ code: code.toString('base64') }));
+    });
     it('Should allow us to send multiple blobs over the same connection', (done) => {
       let client = require('net').connect({ port: PORT, timeout: TIMEOUT });
       let code = new Buffer('var foo = require(\'net\');');
