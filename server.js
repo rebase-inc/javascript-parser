@@ -31,9 +31,13 @@ const server = net.createServer((socket) => {
     }
     let start = process.hrtime();
     let code = new Buffer(b64code, 'base64').toString();
-    let useCount = analyze(code);
-    let duration = (process.hrtime(start)[1] / 1000000000).toFixed(2)
-    socket.write(JSON.stringify({ use_count: useCount, analysisTime: duration }), 'UTF8');
+    try {
+      let useCount = analyze(code);
+      let duration = (process.hrtime(start)[1] / 1000000000).toFixed(2)
+      socket.write(JSON.stringify({ use_count: useCount, analysisTime: duration }), 'UTF8');
+    } catch (err) {
+      socket.write(JSON.stringify({ error: 1, message: err.message }), 'UTF8');
+    }
   });
   socket.on('close', (err) => {
     if (err) {
