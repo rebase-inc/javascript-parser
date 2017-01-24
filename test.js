@@ -1,17 +1,48 @@
 let should = require('should');
 
-const PORT = 7777;
+const PORT = 7778;
 const TIMEOUT = 80;
+const SOME_CODE = `
+import React, { Component } from 'react';
+import LanguageIcon from './LanguageIcon';
+
+class LanguageSelector extends Component {
+  componentDidMount() {
+    var foo = 1;
+  }
+  render() {
+    return (
+      <div className='languageSelector'>
+        { props.languages.map(l => <LanguageSelection name={Math.random()} selected={Boolean()} select={props.select.bind(null, language.name)} />) }
+      </div>
+    );
+  }
+}
+
+class LanguageSelection extends Component {
+  render() {
+    return (
+      <span className='languageSelection' data-selected={props.selected} onMouseOver={props.select}>
+        <LanguageIcon name={props.name} />
+        { props.name }
+      </span>
+    );
+  }
+}
+
+export default LanguageSelector;
+`
 
 describe('Test javascript parser', () => {
   describe('Parse valid code', () => {
     it('Should be able to parse simple code', (done) => {
       let client = require('net').connect({ port: PORT, timeout: TIMEOUT });
-      let code = new Buffer('var foo = require(\'net\');');
+      let code = new Buffer('var foo = require(\'net\'); foo();');
       client.on('data', (data) => {
         let uses = JSON.parse(new Buffer(data).toString())['use_count'];
-        uses.should.have.property('net');
-        uses.should.have.property('require');
+        uses.should.have.property('net', 2);
+        delete uses.net;
+        uses.should.be.empty;
         client.end();
         done();
       });
@@ -46,8 +77,7 @@ describe('Test javascript parser', () => {
       let count = 0;
       client.on('data', (data) => {
         let uses = JSON.parse(new Buffer(data).toString())['use_count'];
-        uses.should.have.property('net');
-        uses.should.have.property('require');
+        uses.should.have.property('net', 1);
         count += 1;
         if (count == 1) {
           client.write(JSON.stringify({ code: code.toString('base64') }));
@@ -56,6 +86,20 @@ describe('Test javascript parser', () => {
           client.end();
           done();
         }
+      });
+      client.write(JSON.stringify({ code: code.toString('base64') }));
+    });
+    it('Should be able to parse more complicated code', (done) => {
+      let client = require('net').connect({ port: PORT, timeout: TIMEOUT });
+      let code = new Buffer(SOME_CODE);
+      client.on('data', (data) => {
+        let uses = JSON.parse(new Buffer(data).toString())['use_count'];
+        uses.should.have.property('react', 1);
+        uses.should.have.property('react.Component', 4);
+        uses.should.have.property('__stdlib__.Math', 1);
+        uses.should.have.property('__stdlib__.Boolean', 1);
+        client.end();
+        done();
       });
       client.write(JSON.stringify({ code: code.toString('base64') }));
     });

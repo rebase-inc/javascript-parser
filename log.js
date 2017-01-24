@@ -3,7 +3,7 @@ const logger = require('winston');
 require('winston-rsyslog2');
 
 logger.add(logger.transports.Rsyslog, {
-  level: process.env.LOG_LEVEL.toLowerCase(),
+  level: process.env.LOG_LEVEL ? process.env.LOG_LEVEL.toLowerCase() : 'debug',
   levelMapping: logger.config.syslog.levels,
   host: 'logserver',
   port: 514,

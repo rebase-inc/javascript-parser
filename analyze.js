@@ -1,11 +1,25 @@
 const traverse = require('babel-traverse').default;
 const NodePath = require('babel-traverse').NodePath;
 const Hub = require('babel-traverse').Hub
-const logger = require('winston');
+// const logger = require('winston');
 
 const babylon = require('babylon');
+const types = require('babel-types');
+const { Profile } = require('./profile.js');
 
-const { STANDARD_LIBRARY } = require('./constants.js');
+const PLUGINS = [
+  'jsx',
+  'flow',
+  'doExpressions',
+  'objectRestSpread',
+  'decorators',
+  'classProperties',
+  'exportExtensions',
+  'asyncGenerators',
+  'functionBind',
+  'functionSent',
+  'dynamicImport'
+]
 
 // This is to get around https://github.com/babel/babel/issues/4413
 // TL;DR: Duplicate declarations crash the babel ast traverser
@@ -22,101 +36,65 @@ const hub = new Hub({
 
 function analyzeCode(code) {
   var profile = new Profile();
-  var ast = babylon.parse(code, { sourceType: 'module', plugins: '*' });
+  var ast = babylon.parse(code, { sourceType: 'module', allowReturnOutsideFunction: true, plugins: PLUGINS });
   var path = NodePath.get({ hub: hub, parentPath: null, parent: ast, container: ast, key: 'program' }).setContext();
   var nodeCount = 0;
-  traverse(ast, {
-    enter: (path) => {
-      nodeCount += 1;
-      if (nodeCount % 10000 == 0) { logger.debug('Parsed ' + nodeCount + ' nodes...'); }
-      var node = path.node;
-      if (node.type == 'ImportDeclaration') {
-        _parseImportDeclaration(node, profile);
-      } else if (node.type == 'VariableDeclarator') {
-        _parseVariableDeclarator(node, profile);
-      } else if (node.type == 'Identifier') {
-        profile.addModuleByBoundName(node.name);
+  traverse(ast, { enter: (path) => {
+      switch (path.node.type) {
+        case 'ImportDeclaration':
+          parseImportDeclaration(path.node).forEach(profile.addBinding);
+          break;
+        case 'VariableDeclarator':
+          parseVariableDeclarator(path.node).forEach(profile.addBinding);
+          break;
+        case 'Identifier':
+          // TODO: Do a better job of detecting uses. Just checking for any identifier is sloppy
+          profile.addUse(path.node.name);
+          break;
       }
     }
-  }, path.scope);
+  });
   return profile.asObject();
 }
 
-class Profile {
-  constructor() {
-    this.useCount = new Map();
-    this.bindings = new Map();
-    for (var globalName of Object.keys(global)) {
-      this.bindings.set(globalName, globalName);
-    }
-    this.bindings.set('require', 'require');
-    for (var name of STANDARD_LIBRARY) {
-      this.bindings.set(name, name);
-    }
-  }
-  addModuleByName(moduleName) {
-    this.useCount.set(moduleName, (this.useCount.get(moduleName) || 0) + 1);
-  }
-  addBoundName(boundName, moduleName) {
-    this.bindings.set(boundName, moduleName);
-  }
-  addModuleByBoundName(boundName) {
-    if (this.bindings.has(boundName)) {
-      this.addModuleByName(this.bindings.get(boundName));
-    }
-  }
-  asObject() {
-    let obj = Object.create(null);
-    for (let [k,v] of this.useCount) {
-      obj[k] = v;
-    }
-    return obj;
-  }
-}
 
-function _isRequireImportNode(node) {
-  let isRequire = (node.type == 'CallExpression' && node.callee.name == 'require');
-  isRequire = isRequire && !(node.arguments[0].value.startsWith('.') || node.arguments[0].value.startsWith('/'));
-  return isRequire;
-}
 
-function _parseVariableDeclarator(node, profile) {
-  let boundName = node.id.name;
-  let field = '';
-  node = node.init;
-  if (!node) { return; }
-  while (node.type == 'MemberExpression') {
-    field = node.property.name + '.' + field;
-    node = node.object;
-  }
-  if (_isRequireImportNode(node)) {
-    let moduleName = node.arguments[0].value + (!!field ? '.' + field : '')
-    profile.addModuleByName(moduleName);
-    profile.addBoundName(boundName, moduleName);
-  }
-}
-
-function _parseImportDeclaration(node, profile) {
-  var moduleName = node.source.value;
-  if (moduleName.startsWith('.') || moduleName.startsWith('/')) {
-    return;
-  }
-  node.specifiers.forEach((specifier) => {
+function parseImportDeclaration(node) {
+  let makeNames = (specifier) => {
+    let realName = [ node.source.value ];
     switch (specifier.type) {
-      case 'ImportSpecifier':
-        profile.addBoundName(specifier.local.name, moduleName + '.' + specifier.imported.name);
-        profile.addModuleByBoundName(specifier.local.name);
+      case 'ImportSpecifier': // import { foo } from 'bar'
+        realName.push(specifier.imported.name);
         break;
-      case 'ImportDefaultSpecifier':
-        profile.addBoundName(specifier.local.name, moduleName);
-        profile.addModuleByName(moduleName);
+      case 'ImportDefaultSpecifier': // import foo from 'bar'
         break;
-      case 'ImportNamespaceSpecifier':
-        profile.addBoundName(specifier.local.name, moduleName);
-        profile.addModuleByName(moduleName);
+      case 'ImportNamespaceSpecifier': // import * as foo from 'bar'
         break;
     }
-  });
+    if (realName[0].startsWith('.') || realName[0].startsWith('/')) {
+      realName.unshift('__private__');
+    }
+    return [ realName.join('.'), specifier.local.name ];
+  }
+  return new Map(node.specifiers.map(makeNames));
+}
+
+function parseVariableDeclarator(node) {
+  let localName = node.id.name;
+  let fullName = [];
+  let expression = node.init;
+  while (expression && expression.type == 'MemberExpression') {
+    fullName.unshift(node.property.name);
+    expression = expression.object;
+  }
+  if (expression && expression.type == 'CallExpression' && expression.callee.name == 'require') {
+    fullName.unshift(expression.arguments[0].value);
+    if (expression.arguments[0].value.startsWith('.') || expression.arguments[0].value.startsWith('/')) {
+      fullName.unshift('__private__');
+    }
+    return new Map([[ fullName.join('.'), localName ]]);
+  }
+  return new Map();
 }
 
 module.exports = analyzeCode;

@@ -1,7 +1,4 @@
 
-exports.JS_LANGUAGE = 'Javascript';
-
-
 exports.STANDARD_LIBRARY = [
     'Infinity',
     'NaN',    
