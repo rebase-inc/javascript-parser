@@ -14,7 +14,7 @@ process.title = os.hostname();
 process.on('SIGTERM', process.exit.bind(this, 0))
 process.on('SIGINT', process.exit.bind(this, 0))
 
-const PORT = process.env.PORT || 7778;
+const PORT = process.env.PORT || 7777;
 const server = net.createServer((socket) => {
   let address = socket.address();
   address.address = address.address.replace(/^.*:/, ''); // IPv4/IPv6 Hybrid socket format fix

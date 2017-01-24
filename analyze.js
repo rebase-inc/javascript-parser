@@ -84,7 +84,7 @@ function parseVariableDeclarator(node) {
   let fullName = [];
   let expression = node.init;
   while (expression && expression.type == 'MemberExpression') {
-    fullName.unshift(node.property.name);
+    fullName.unshift(expression.property.name);
     expression = expression.object;
   }
   if (expression && expression.type == 'CallExpression' && expression.callee.name == 'require') {
