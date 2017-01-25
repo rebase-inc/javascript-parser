@@ -14,14 +14,15 @@ class Profile {
     this.addBinding = this.addBinding.bind(this);
     this.asObject = this.asObject.bind(this);
   }
-  addUse(localName) {
-    let realName = this.bindings.get(localName);
-    if (realName) {
-      this.useCount.set(realName, (this.useCount.get(realName) || 0) + 1);
+  addUse(...localName) {
+    let baseName = this.bindings.get(localName[0]);
+    let fullName = [baseName].concat(localName.slice(1, localName.length)).join('.');
+    if (baseName) {
+      this.useCount.set(fullName, (this.useCount.get(fullName) || 0) + 1);
     }
   }
-  addBinding(localName, realName) {
-    this.bindings.set(localName, realName);
+  addBinding(localName, ...realName) {
+    this.bindings.set(localName, realName.join('.'));
   }
   asObject() {
     let obj = Object.create(null);

@@ -32,15 +32,16 @@ class LanguageSelection extends Component {
 
 export default LanguageSelector;
 `
+//const SOME_CODE = '[1,2,3].map(num => Math.random(num))'
 
 describe('Test javascript parser', () => {
   describe('Parse valid code', () => {
     it('Should be able to parse simple code', (done) => {
       let client = require('net').connect({ port: PORT, timeout: TIMEOUT });
-      let code = new Buffer('var foo = require(\'net\'); foo();');
+      let code = new Buffer('var foo = require(\'net\').client.send; foo();');
       client.on('data', (data) => {
         let uses = JSON.parse(new Buffer(data).toString())['use_count'];
-        uses.should.have.property('net', 2);
+        uses.should.have.property('net.client.send', 1);
         delete uses.net;
         uses.should.be.empty;
         client.end();
@@ -73,7 +74,7 @@ describe('Test javascript parser', () => {
     });
     it('Should allow us to send multiple blobs over the same connection', (done) => {
       let client = require('net').connect({ port: PORT, timeout: TIMEOUT });
-      let code = new Buffer('var foo = require(\'net\');');
+      let code = new Buffer('var foo = require(\'net\'); foo()');
       let count = 0;
       client.on('data', (data) => {
         let uses = JSON.parse(new Buffer(data).toString())['use_count'];
@@ -94,9 +95,10 @@ describe('Test javascript parser', () => {
       let code = new Buffer(SOME_CODE);
       client.on('data', (data) => {
         let uses = JSON.parse(new Buffer(data).toString())['use_count'];
-        uses.should.have.property('react', 1);
-        uses.should.have.property('react.Component', 4);
-        uses.should.have.property('__stdlib__.Math', 1);
+        uses.should.have.property('react.Component.componentDidMount', 1);
+        uses.should.have.property('react.Component.render', 2);
+        uses.should.have.property('react.Component', 2);
+        uses.should.have.property('__stdlib__.Math.random', 1);
         uses.should.have.property('__stdlib__.Boolean', 1);
         client.end();
         done();
