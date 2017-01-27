@@ -3,7 +3,6 @@ const NodePath = require('babel-traverse').NodePath;
 const Hub = require('babel-traverse').Hub
 const logger = require('winston');
 
-const types = require('babel-types');
 const { Profile } = require('./profile.js');
 
 // This is to get around https://github.com/babel/babel/issues/4413

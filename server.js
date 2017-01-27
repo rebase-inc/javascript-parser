@@ -1,6 +1,5 @@
 const os = require('os');
 const net = require('net');
-const readline = require('readline');
 const babylon = require('babylon');
 
 const logger = require('./log.js');
