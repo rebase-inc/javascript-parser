@@ -1,14 +1,29 @@
 const os = require('os');
 const net = require('net');
 const readline = require('readline');
+const babylon = require('babylon');
 
-//const logger = require('./log.js');
-const logger = {
-  'info': console.log.bind(console),
-  'error': console.log.bind(console),
-  'debug': console.log.bind(console)
-}
+const logger = require('./log.js');
+// const logger = {
+//   'info': console.log.bind(console),
+//   'error': console.log.bind(console),
+//   'debug': console.log.bind(console)
+// }
 const analyze = require('./analyze.js');
+
+const PLUGINS = [
+  'jsx',
+  'flow',
+  'doExpressions',
+  'objectRestSpread',
+  'decorators',
+  'classProperties',
+  'exportExtensions',
+  'asyncGenerators',
+  'functionBind',
+  'functionSent',
+  'dynamicImport'
+]
 
 process.title = os.hostname();
 process.on('SIGTERM', process.exit.bind(this, 0))
@@ -37,12 +52,21 @@ const server = net.createServer((socket) => {
     let start = process.hrtime();
     let code = new Buffer(b64code, 'base64').toString();
     try {
-      let useCount = analyze(code);
+      var ast = babylon.parse(code, { sourceType: 'module', allowReturnOutsideFunction: true, plugins: PLUGINS });
+    } catch (err) {
+      socket.write(JSON.stringify({ error: 1, message: err.message }), 'UTF8');
+      return;
+    }
+
+    try {
+      let useCount = analyze(ast);
       let duration = (process.hrtime(start)[1] / 1000000000).toFixed(2)
       socket.write(JSON.stringify({ use_count: useCount, analysisTime: duration }), 'UTF8');
     } catch (err) {
-      console.log(err);
-      socket.write(JSON.stringify({ error: 1, message: err.message }), 'UTF8');
+      logger.error(err.message);
+      socket.write(JSON.stringify({ error: 2, message: 'Parser Error!: ' + err.message }), 'UTF8');
+      //throw err;
+      return;
     }
   });
   socket.on('close', (err) => {
