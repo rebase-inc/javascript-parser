@@ -7,7 +7,7 @@ logger.add(logger.transports.Rsyslog, {
   levelMapping: logger.config.syslog.levels,
   host: 'logserver',
   port: 514,
-  tag: `${os.hostname()}`,
+  tag: 'JavascriptParser',
   messageProvider: (level, msg, meta) => msg.substring(0,900)
 });
 
